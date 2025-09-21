@@ -1,103 +1,288 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState } from "react";
+import { Layout, Menu, Card, Typography, Avatar, Dropdown, Button, Space } from "antd";
+import { 
+  MessageOutlined, 
+  SendOutlined, 
+  BarChartOutlined, 
+  SettingOutlined,
+  FacebookOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  ProfileOutlined
+} from "@ant-design/icons";
+import AutoCommentTab from "../components/AutoCommentTab";
+import AutoPostTab from "../components/AutoPostTab";
+import ProtectedRoute from "../components/ProtectedRoute";
+import { useAuth } from "../contexts/AuthContext";
+import '@ant-design/v5-patch-for-react-19';
+
+const { Sider, Content, Header } = Layout;
+const { Title, Text } = Typography;
+
+type MenuKey = 'comment' | 'post' | 'analytics' | 'settings';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [selectedKey, setSelectedKey] = useState<MenuKey>('comment');
+  const [collapsed, setCollapsed] = useState(false);
+  const { user, signOut } = useAuth();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const userMenuItems = [
+    {
+      key: 'profile',
+      icon: <ProfileOutlined />,
+      label: 'Profile',
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Sign Out',
+      onClick: handleSignOut,
+    },
+  ];
+
+  const menuItems = [
+    {
+      key: 'comment',
+      icon: <MessageOutlined />,
+      label: 'Auto Comment',
+    },
+    {
+      key: 'post',
+      icon: <SendOutlined />,
+      label: 'Auto Post',
+    },
+    {
+      key: 'analytics',
+      icon: <BarChartOutlined />,
+      label: 'Analytics',
+      disabled: true, // Coming soon
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: 'Settings',
+      disabled: true, // Coming soon
+    },
+  ];
+
+  const renderContent = () => {
+    switch (selectedKey) {
+      case 'comment':
+        return <AutoCommentTab />;
+      case 'post':
+        return <AutoPostTab />;
+      case 'analytics':
+        return (
+          <div className="p-6">
+            <Card>
+              <div className="text-center py-12">
+                <BarChartOutlined className="text-6xl text-gray-300 mb-4" />
+                <Title level={3} className="text-gray-500">Analytics Dashboard</Title>
+                <Text type="secondary">Coming soon - Track your automation performance</Text>
+              </div>
+            </Card>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="p-6">
+            <Card>
+              <div className="text-center py-12">
+                <SettingOutlined className="text-6xl text-gray-300 mb-4" />
+                <Title level={3} className="text-gray-500">Settings</Title>
+                <Text type="secondary">Coming soon - Configure your automation preferences</Text>
+              </div>
+            </Card>
+          </div>
+        );
+      default:
+        return <AutoCommentTab />;
+    }
+  };
+
+  return (
+    <ProtectedRoute>
+      <Layout style={{ minHeight: '100vh' }}>
+      {/* Sidebar */}
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        theme="light"
+        width={250}
+        style={{
+          boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+          zIndex: 1000,
+        }}
+      >
+        {/* Logo/Brand */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <Avatar 
+              size={40} 
+              style={{ backgroundColor: '#1890ff' }}
+              icon={<FacebookOutlined />}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {!collapsed && (
+              <div>
+                <Title level={4} className="mb-0 text-gray-800">
+                  FB Automation
+                </Title>
+                <Text type="secondary" className="text-xs">
+                  Social Media Tools
+                </Text>
+              </div>
+            )}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Navigation Menu */}
+        <Menu
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          items={menuItems}
+          onClick={({ key }) => setSelectedKey(key as MenuKey)}
+          style={{ 
+            border: 'none',
+            marginTop: 16,
+          }}
+          className="custom-menu"
+        />
+
+        {/* Footer info */}
+        {!collapsed && (
+          <div className="absolute bottom-4 left-4 right-4 mb-10">
+            <Card size="small" className="bg-blue-50 border-blue-200 ">
+              <div className="text-center">
+                <Text type="secondary" className="text-xs">
+                  Version 1.0.0
+                </Text>
+                <br />
+                <Text type="secondary" className="text-xs">
+                  Made by Tat Tu Nguyen
+                </Text>
+              </div>
+            </Card>
+          </div>
+        )}
+      </Sider>
+
+      {/* Main Content */}
+      <Layout>
+        {/* Header */}
+        <Header style={{ 
+          background: '#fff', 
+          padding: '0 24px',
+          borderBottom: '1px solid #f0f0f0',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}>
+          <div className="flex justify-between h-full">
+            <div>
+              <Title level={2} className="mb-0 text-gray-800">
+                {menuItems.find(item => item.key === selectedKey)?.label}
+              </Title>
+              <Text type="secondary">
+                {selectedKey === 'comment' && 'Automatically comment on Facebook posts'}
+                {selectedKey === 'post' && 'Schedule and publish Facebook posts'}
+                {selectedKey === 'analytics' && 'View automation performance metrics'}
+                {selectedKey === 'settings' && 'Configure automation settings'}
+              </Text>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Card size="small" className="bg-green-50 border-green-200">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <Text type="secondary" className="text-xs">
+                    System Online
+                  </Text>
+                </div>
+              </Card>
+
+              {/* User Profile Dropdown */}
+              <Dropdown
+                menu={{ 
+                  items: userMenuItems.map(item => ({
+                    ...item,
+                    onClick: item.onClick || undefined
+                  }))
+                }}
+                placement="bottomRight"
+                trigger={['click']}
+              >
+                <Button type="text" className="h-auto p-2">
+                  <Space>
+                    <Avatar 
+                      size={32} 
+                      src={user?.avatar_url}
+                      icon={!user?.avatar_url && <UserOutlined />}
+                      style={{ backgroundColor: user?.avatar_url ? undefined : '#1890ff' }}
+                    />
+                    <div className="text-left hidden sm:block">
+                      <div className="text-sm font-medium text-gray-900">
+                        {user?.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {user?.subscription_plan || 'Free Plan'}
+                      </div>
+                    </div>
+                  </Space>
+                </Button>
+              </Dropdown>
+            </div>
+          </div>
+        </Header>
+
+        {/* Page Content */}
+        <Content style={{ 
+          background: '#f5f5f5',
+          overflow: 'auto'
+        }}>
+          {renderContent()}
+        </Content>
+      </Layout>
+
+      <style jsx global>{`
+        .custom-menu .ant-menu-item {
+          margin: 4px 8px !important;
+          border-radius: 8px !important;
+          height: 48px !important;
+          line-height: 48px !important;
+        }
+        
+        .custom-menu .ant-menu-item:hover {
+          background-color: #f0f9ff !important;
+          color: #1890ff !important;
+        }
+        
+        .custom-menu .ant-menu-item-selected {
+          background-color: #e6f7ff !important;
+          color: #1890ff !important;
+          font-weight: 600 !important;
+        }
+        
+        .custom-menu .ant-menu-item-disabled {
+          opacity: 0.5 !important;
+        }
+        
+        .ant-layout-sider-trigger {
+          background: #f8f9fa !important;
+          color: #666 !important;
+          border-top: 1px solid #e8e8e8 !important;
+        }
+        
+        .ant-layout-sider-trigger:hover {
+          background: #e9ecef !important;
+          color: #1890ff !important;
+        }
+      `}</style>
+    </Layout>
+    </ProtectedRoute>
   );
 }
