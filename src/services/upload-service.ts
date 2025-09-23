@@ -7,6 +7,64 @@ interface UploadOptions {
   debug?: boolean;
 }
 
+interface IntervalOptions extends UploadOptions {
+  cycleInterval?: number; // milliseconds between cycles
+  maxCycles?: number | null; // maximum cycles (null for unlimited)
+}
+
+interface ProcessInfo {
+  id: string;
+  status: 'running' | 'running_cycle' | 'waiting' | 'stopped' | 'completed' | 'error';
+  startTime: string;
+  endTime?: string;
+  currentCycle: number;
+  completedCycles: number;
+  totalCycles: number | null;
+  urls: number;
+  comment: string;
+  lastCycleResult?: {
+    total: number;
+    successful: number;
+    failed: number;
+    successRate: string;
+    timestamp: string;
+  };
+  nextCycleTime?: string;
+  error?: string;
+  duration: number; // milliseconds
+}
+
+interface StartIntervalResponse {
+  success: boolean;
+  message: string;
+  processId: string;
+  config: {
+    urls: number;
+    cycleInterval: number;
+    maxCycles: number | 'unlimited';
+    delay: number;
+  };
+}
+
+interface StopProcessResponse {
+  success: boolean;
+  message: string;
+  processId: string;
+  finalStatus: {
+    completedCycles: number;
+    status: string;
+    duration: number;
+  };
+}
+
+interface ProcessStatusResponse {
+  success: boolean;
+  process?: ProcessInfo;
+  totalProcesses?: number;
+  activeProcesses?: number;
+  processes?: ProcessInfo[];
+}
+
 interface UploadResult {
   url: string;
   success: boolean;
@@ -170,29 +228,147 @@ class UploadService {
       return response.data;
     } catch (error) {
       console.error('Upload service error:', error);
-      
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<UploadError>;
-        
-        if (axiosError.response) {
-          // Server responded with error status
-          const errorMessage = axiosError.response.data?.message || 
-                              axiosError.response.statusText || 
-                              `HTTP error! status: ${axiosError.response.status}`;
-          throw new Error(errorMessage);
-        } else if (axiosError.request) {
-          // Request was made but no response received
-          throw new Error('Network error: No response received from server');
-        } else {
-          // Something else happened
-          throw new Error(`Request error: ${axiosError.message}`);
-        }
-      }
-      
-      throw error;
+      this.handleError(error);
     }
   }
 
+  /**
+   * Start interval comment process
+   * @param comment - The comment text to post
+   * @param urls - Array of Facebook URLs to post to
+   * @param cookiesContent - Raw cookies file content (optional)
+   * @param cookiesFileName - Name of the cookies file (optional)
+   * @param options - Additional options including interval settings
+   */
+  async startIntervalComment(
+    comment: string,
+    urls: string[],
+    cookiesContent?: string | null,
+    cookiesFileName?: string | null,
+    options: IntervalOptions = {}
+  ): Promise<StartIntervalResponse> {
+    try {
+      const formData = new FormData();
+      
+      // Add required fields
+      formData.append('comment', comment);
+      formData.append('urls', JSON.stringify(urls));
+      
+      // Add optional configuration
+      if (options.delay !== undefined) {
+        formData.append('delay', options.delay.toString());
+      }
+      if (options.headless !== undefined) {
+        formData.append('headless', options.headless.toString());
+      }
+      if (options.timeout !== undefined) {
+        formData.append('timeout', options.timeout.toString());
+      }
+      if (options.debug !== undefined) {
+        formData.append('debug', options.debug.toString());
+      }
+      
+      // Add interval-specific options
+      if (options.cycleInterval !== undefined) {
+        formData.append('cycleInterval', options.cycleInterval.toString());
+      }
+      if (options.maxCycles !== undefined && options.maxCycles !== null) {
+        formData.append('maxCycles', options.maxCycles.toString());
+      }
+
+      // Add cookies file if provided
+      if (cookiesContent && cookiesFileName) {
+        const cookiesBlob = new Blob([cookiesContent], { type: 'text/plain' });
+        formData.append('cookieFile', cookiesBlob, cookiesFileName);
+      }
+
+      const response: AxiosResponse<StartIntervalResponse> = await this.axiosInstance.post(
+        `${this.baseUrl}/api/upload/comment-interval`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 30000, // 30 seconds for starting process
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Start interval comment error:', error);
+      this.handleError(error);
+    }
+  }
+
+  /**
+   * Stop a running interval comment process
+   * @param processId - The process ID to stop
+   */
+  async stopProcess(processId: string): Promise<StopProcessResponse> {
+    try {
+      const response: AxiosResponse<StopProcessResponse> = await this.axiosInstance.post(
+        `${this.baseUrl}/api/upload/stop-process`,
+        { processId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000, // 10 seconds for stopping process
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Stop process error:', error);
+      this.handleError(error);
+    }
+  }
+
+  /**
+   * Get process status
+   * @param processId - Optional specific process ID to check
+   */
+  async getProcessStatus(processId?: string): Promise<ProcessStatusResponse> {
+    try {
+      const url = processId 
+        ? `${this.baseUrl}/api/upload/process-status?processId=${processId}`
+        : `${this.baseUrl}/api/upload/process-status`;
+
+      const response: AxiosResponse<ProcessStatusResponse> = await this.axiosInstance.get(url, {
+        timeout: 10000, // 10 seconds for status check
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Get process status error:', error);
+      this.handleError(error);
+    }
+  }
+
+  /**
+   * Handle errors in a consistent way
+   */
+  private handleError(error: any): never {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<UploadError>;
+      
+      if (axiosError.response) {
+        // Server responded with error status
+        const errorMessage = axiosError.response.data?.message || 
+                            axiosError.response.statusText || 
+                            `HTTP error! status: ${axiosError.response.status}`;
+        throw new Error(errorMessage);
+      } else if (axiosError.request) {
+        // Request was made but no response received
+        throw new Error('Network error: No response received from server');
+      } else {
+        // Something else happened
+        throw new Error(`Request error: ${axiosError.message}`);
+      }
+    }
+    
+    throw error;
+  }
   /**
    * Check upload service status
    */
@@ -204,20 +380,7 @@ class UploadService {
       return response.data;
     } catch (error) {
       console.error('Status check error:', error);
-      
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError;
-        
-        if (axiosError.response) {
-          throw new Error(`HTTP error! status: ${axiosError.response.status}`);
-        } else if (axiosError.request) {
-          throw new Error('Network error: No response received from server');
-        } else {
-          throw new Error(`Request error: ${axiosError.message}`);
-        }
-      }
-      
-      throw error;
+      this.handleError(error);
     }
   }
 
@@ -259,4 +422,14 @@ export const uploadService = new UploadService();
 export default uploadService;
 
 // Export types for use in components
-export type { UploadOptions, UploadResult, UploadResponse, UploadError };
+export type { 
+  UploadOptions, 
+  IntervalOptions,
+  UploadResult, 
+  UploadResponse, 
+  UploadError,
+  ProcessInfo,
+  StartIntervalResponse,
+  StopProcessResponse,
+  ProcessStatusResponse
+};
