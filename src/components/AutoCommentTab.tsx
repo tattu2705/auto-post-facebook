@@ -3,8 +3,11 @@
 import React, { useState } from "react";
 import { Button, Input, Upload, Tag, Space, notification, Card, Progress, Typography, Alert, InputNumber } from "antd";
 import { UploadOutlined, ClockCircleOutlined } from "@ant-design/icons";
-import uploadService, { type UploadResponse, type ProcessInfo, type StartIntervalResponse } from "../services/upload-service";
+import uploadService from "../services/upload-service";
+import cookieService from "../services/cookie-service";
+import commentHistoryService from "../services/comment-history-service";
 import UserWelcomeCard from "./UserWelcomeCard";
+import { type UploadResponse, type ProcessInfo, type StartIntervalResponse } from "../types";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -34,6 +37,7 @@ export default function AutoCommentTab() {
   const [backendProcessId, setBackendProcessId] = useState<string | null>(null);
   const [processInfo, setProcessInfo] = useState<ProcessInfo | null>(null);
   const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  const [currentHistoryId, setCurrentHistoryId] = useState<number | null>(null);
 
   const urlRegex = /https?:\/\/[\w\-@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([\w\-@:%_\+.~#?&//=]*)/i;
 
@@ -88,6 +92,7 @@ export default function AutoCommentTab() {
     setCurrentCycle(0);
     setBackendProcessId(null);
     setProcessInfo(null);
+    setCurrentHistoryId(null);
   };
 
   // Reset function for new session
@@ -290,6 +295,85 @@ export default function AutoCommentTab() {
     setProcessStartTime(new Date());
 
     try {
+      let fileName: string | null = null;
+      let filePath: string | null = null;
+      // Step 1: Upload cookie file if available
+      if (cookiesContent && cookiesFileName) {
+        notification.info({
+          message: "📤 Uploading cookie file...",
+          description: `Uploading ${cookiesFileName}`,
+          duration: 3,
+        });
+
+        try {
+          // Create File object from cookies content
+          const cookieBlob = new Blob([cookiesContent], { type: 'text/plain' });
+          const cookieFile = new File([cookieBlob], cookiesFileName, { type: 'text/plain' });
+
+          // Upload cookie file to backend
+          const cookieResponse = await cookieService.uploadCookieFile(cookieFile);
+          fileName = cookieResponse.name;
+          filePath = cookieResponse.download_url
+          notification.success({
+            message: "✅ Cookie file uploaded",
+            description: `File Name: ${fileName}`,
+            duration: 4,
+          });
+        } catch (cookieError) {
+          console.error('Cookie upload error:', cookieError);
+          notification.error({
+            message: "❌ Failed to upload cookie file",
+            description: cookieError instanceof Error ? cookieError.message : String(cookieError),
+            duration: 8,
+          });
+          cleanup();
+          return;
+        }
+      } else {
+        notification.warning({
+          message: "⚠️ No cookie file provided",
+          description: "Proceeding without authentication cookies",
+          duration: 4,
+        });
+      }
+
+      // Step 2: Create comment history record
+      notification.info({
+        message: "📝 Creating comment history...",
+        description: `Saving process information`,
+        duration: 3,
+      });
+
+      try {
+        const estimatedDuration = calculateEstimatedTime(links.length);
+        const historyData = {
+          comment_text: comment,
+          target_urls: JSON.stringify(links),
+          cookie_file_path: filePath,
+          status: "running",
+          estimated_duration: estimatedDuration,
+        };
+
+        const historyResponse = await commentHistoryService.createCommentHistory(historyData);
+        setCurrentHistoryId(historyResponse.id);
+
+        notification.success({
+          message: "✅ Comment history created",
+          description: `History ID: ${historyResponse.id}`,
+          duration: 4,
+        });
+      } catch (historyError) {
+        console.error('History creation error:', historyError);
+        notification.error({
+          message: "❌ Failed to create comment history",
+          description: historyError instanceof Error ? historyError.message : String(historyError),
+          duration: 8,
+        });
+        cleanup();
+        return;
+      }
+
+      // Step 3: Start the actual commenting process
       if (isContinuousMode) {
         // Use backend interval commenting
         const response = await uploadService.startIntervalComment(
@@ -316,7 +400,10 @@ export default function AutoCommentTab() {
               <div>📊 Processing {links.length} link(s)</div>
               <div>⏰ Comment interval: <strong>{intervalTime}s</strong></div>
               <div>🔄 Cycle interval: <strong>{formatDurationHMS(cycleInterval)}</strong></div>
-              <div className="text-xs text-gray-600 mt-1">Process ID: {response.processId}</div>
+              <div className="text-xs text-gray-600 mt-1">
+                Process ID: {response.processId}<br />
+                History ID: {currentHistoryId}
+              </div>
             </div>
           ),
           duration: 8,
@@ -344,6 +431,20 @@ export default function AutoCommentTab() {
         setUploadResults(results);
         setIsProcessing(false);
         
+        // Update comment history with results
+        if (currentHistoryId) {
+          try {
+            await commentHistoryService.updateCommentHistory(currentHistoryId, {
+              status: results.statistics.failed > 0 ? 'completed' : 'completed',
+              successful_links: results.statistics.successful,
+              failed_links: results.statistics.failed,
+              actual_duration: calculateEstimatedTime(links.length), // Use actual duration when available
+            });
+          } catch (updateError) {
+            console.error('Failed to update history:', updateError);
+          }
+        }
+        
         notification.success({
           message: "✅ Single cycle completed!",
           description: `${results.statistics.successful}/${results.statistics.total} comments posted (${results.statistics.successRate})`,
@@ -353,6 +454,18 @@ export default function AutoCommentTab() {
 
     } catch (error) {
       console.error('Process error:', error);
+      
+      // Update history with error status if available
+      if (currentHistoryId) {
+        try {
+          await commentHistoryService.updateCommentHistory(currentHistoryId, {
+            status: 'failed',
+          });
+        } catch (updateError) {
+          console.error('Failed to update history with error:', updateError);
+        }
+      }
+      
       cleanup();
       notification.error({
         message: "❌ Failed to start process",

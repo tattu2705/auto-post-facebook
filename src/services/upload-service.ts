@@ -1,96 +1,15 @@
 import axios, { AxiosResponse, AxiosError } from 'axios';
-
-interface UploadOptions {
-  delay?: number;
-  headless?: boolean;
-  timeout?: number;
-  debug?: boolean;
-}
-
-interface IntervalOptions extends UploadOptions {
-  cycleInterval?: number; // milliseconds between cycles
-  maxCycles?: number | null; // maximum cycles (null for unlimited)
-}
-
-interface ProcessInfo {
-  id: string;
-  status: 'running' | 'running_cycle' | 'waiting' | 'stopped' | 'completed' | 'error';
-  startTime: string;
-  endTime?: string;
-  currentCycle: number;
-  completedCycles: number;
-  totalCycles: number | null;
-  urls: number;
-  comment: string;
-  lastCycleResult?: {
-    total: number;
-    successful: number;
-    failed: number;
-    successRate: string;
-    timestamp: string;
-  };
-  nextCycleTime?: string;
-  error?: string;
-  duration: number; // milliseconds
-}
-
-interface StartIntervalResponse {
-  success: boolean;
-  message: string;
-  processId: string;
-  config: {
-    urls: number;
-    cycleInterval: number;
-    maxCycles: number | 'unlimited';
-    delay: number;
-  };
-}
-
-interface StopProcessResponse {
-  success: boolean;
-  message: string;
-  processId: string;
-  finalStatus: {
-    completedCycles: number;
-    status: string;
-    duration: number;
-  };
-}
-
-interface ProcessStatusResponse {
-  success: boolean;
-  process?: ProcessInfo;
-  totalProcesses?: number;
-  activeProcesses?: number;
-  processes?: ProcessInfo[];
-}
-
-interface UploadResult {
-  url: string;
-  success: boolean;
-  message: string;
-  timestamp: string;
-  error?: string;
-}
-
-interface UploadResponse {
-  success: boolean;
-  message: string;
-  statistics: {
-    total: number;
-    successful: number;
-    failed: number;
-    successRate: string;
-  };
-  results: UploadResult[];
-}
-
-interface UploadError {
-  success: false;
-  message: string;
-  error?: string;
-  errors?: any[];
-}
+import {
+  UploadOptions,
+  IntervalOptions,
+  ProcessInfo,
+  StartIntervalResponse,
+  StopProcessResponse,
+  ProcessStatusResponse,
+  UploadResult,
+  UploadResponse,
+  UploadError
+} from '../types/upload';
 
 class UploadService {
   private baseUrl = 'http://localhost:8080'; // Adjust this to your backend URL
@@ -420,16 +339,3 @@ class UploadService {
 // Export singleton instance
 export const uploadService = new UploadService();
 export default uploadService;
-
-// Export types for use in components
-export type { 
-  UploadOptions, 
-  IntervalOptions,
-  UploadResult, 
-  UploadResponse, 
-  UploadError,
-  ProcessInfo,
-  StartIntervalResponse,
-  StopProcessResponse,
-  ProcessStatusResponse
-};

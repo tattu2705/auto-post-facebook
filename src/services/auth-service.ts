@@ -1,43 +1,11 @@
 import axios, { AxiosResponse, AxiosError } from 'axios';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar_url?: string;
-  subscription_plan: string;
-  created_at: string;
-}
-
-interface AuthResponse {
-  success: boolean;
-  message: string;
-  user: User;
-  accessToken: string;
-  refreshToken: string;
-}
-
-interface SignUpData {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  subscription_plan?: string;
-}
-
-interface SignInData {
-  email: string;
-  password: string;
-}
-
-interface AuthError {
-  success: false;
-  message: string;
-  errors?: Array<{
-    field: string;
-    message: string;
-  }>;
-}
+import { 
+  User, 
+  AuthResponse, 
+  SignUpData, 
+  SignInData, 
+  AuthError 
+} from '../types/auth';
 
 class AuthService {
   private baseUrl = 'http://localhost:8080'; // Adjust to your backend URL
@@ -228,6 +196,3 @@ class AuthService {
 
 export const authService = new AuthService();
 export default authService;
-
-// Export types
-export type { User, SignUpData, SignInData, AuthResponse, AuthError };

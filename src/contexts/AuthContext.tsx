@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { notification } from 'antd';
-import authService, { type User, type SignUpData, type SignInData } from '../services/auth-service';
+import authService from '../services/auth-service';
+import { type User, type SignUpData, type SignInData } from '../types';
 
 interface AuthContextType {
   user: User | null;

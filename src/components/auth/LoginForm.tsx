@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, Divider, Space, message } from 'antd';
 import { UserOutlined, LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { SignInData } from '../../services/auth-service';
+import { SignInData } from '../../types';
 
 const { Title, Text, Link } = Typography;
 
