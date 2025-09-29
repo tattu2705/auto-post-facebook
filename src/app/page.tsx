@@ -1,19 +1,30 @@
 "use client";
 
 import React, { useState } from "react";
-import { Layout, Menu, Card, Typography, Avatar, Dropdown, Button, Space } from "antd";
-import { 
-  MessageOutlined, 
-  SendOutlined, 
-  BarChartOutlined, 
+import {
+  MessageOutlined,
+  SendOutlined,
+  BarChartOutlined,
   SettingOutlined,
   FacebookOutlined,
   UserOutlined,
   LogoutOutlined,
-  ProfileOutlined
+  ProfileOutlined,
+  BellOutlined
 } from "@ant-design/icons";
+import {
+  Layout,
+  Menu,
+  Card,
+  Typography,
+  Avatar,
+  Dropdown,
+  Button,
+  Space
+} from "antd";
 import AutoCommentTab from "../components/AutoCommentTab";
 import AutoPostTab from "../components/AutoPostTab";
+import GetNotificationTab from "../components/GetNotificationTab";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../contexts/AuthContext";
 import '@ant-design/v5-patch-for-react-19';
@@ -21,7 +32,7 @@ import '@ant-design/v5-patch-for-react-19';
 const { Sider, Content, Header } = Layout;
 const { Title, Text } = Typography;
 
-type MenuKey = 'comment' | 'post' | 'analytics' | 'settings';
+type MenuKey = 'comment' | 'post' | 'notification' | 'analytics' | 'settings';
 
 export default function Home() {
   const [selectedKey, setSelectedKey] = useState<MenuKey>('comment');
@@ -58,6 +69,11 @@ export default function Home() {
       label: 'Auto Post',
     },
     {
+      key: 'notification',
+      icon: <BellOutlined />,
+      label: 'Get Notification Link',
+    },
+    {
       key: 'analytics',
       icon: <BarChartOutlined />,
       label: 'Analytics',
@@ -77,6 +93,8 @@ export default function Home() {
         return <AutoCommentTab />;
       case 'post':
         return <AutoPostTab />;
+      case 'notification':
+        return <GetNotificationTab />;
       case 'analytics':
         return (
           <div className="p-6">

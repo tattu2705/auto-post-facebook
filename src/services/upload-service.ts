@@ -339,3 +339,28 @@ class UploadService {
 // Export singleton instance
 export const uploadService = new UploadService();
 export default uploadService;
+
+// Add helper to get notification links using cookie file and count
+export async function getNotificationLinks(count: number, file?: File | null) {
+  try {
+    const formData = new FormData();
+    formData.append('numberOfNotifications', String(count));
+    if (file) {
+      formData.append('cookieFile', file);
+    }
+
+    const response: AxiosResponse = await uploadService.getAxiosInstance().post(
+      '/api/upload/get-notifications',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        baseURL: uploadService.getAxiosInstance().defaults.baseURL || 'http://localhost:8080',
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('getNotificationLinks error:', error);
+    throw error;
+  }
+}
