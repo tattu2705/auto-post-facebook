@@ -25,6 +25,7 @@ import {
 import AutoCommentTab from "../components/AutoCommentTab";
 import AutoPostTab from "../components/AutoPostTab";
 import GetNotificationTab from "../components/GetNotificationTab";
+import ManageHistoryTab from "../components/ManageHistoryTab";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { useAuth } from "../contexts/AuthContext";
 import '@ant-design/v5-patch-for-react-19';
@@ -32,7 +33,7 @@ import '@ant-design/v5-patch-for-react-19';
 const { Sider, Content, Header } = Layout;
 const { Title, Text } = Typography;
 
-type MenuKey = 'comment' | 'post' | 'notification' | 'analytics' | 'settings';
+type MenuKey = 'comment' | 'post' | 'notification' | 'history' | 'analytics' | 'settings';
 
 export default function Home() {
   const [selectedKey, setSelectedKey] = useState<MenuKey>('comment');
@@ -74,6 +75,11 @@ export default function Home() {
       label: 'Get Notification Link',
     },
     {
+      key: 'history',
+      icon: <ProfileOutlined />,
+      label: 'Manage Comment History',
+    },
+    {
       key: 'analytics',
       icon: <BarChartOutlined />,
       label: 'Analytics',
@@ -95,6 +101,8 @@ export default function Home() {
         return <AutoPostTab />;
       case 'notification':
         return <GetNotificationTab />;
+      case 'history':
+        return <ManageHistoryTab />;
       case 'analytics':
         return (
           <div className="p-6">

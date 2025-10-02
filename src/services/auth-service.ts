@@ -10,7 +10,7 @@ import {
 class AuthService {
   private baseUrl = 'http://localhost:8080'; // Adjust to your backend URL
   private axiosInstance = axios.create({
-    timeout: 30000,
+    timeout: 86400,
     withCredentials: true, // Important for cookies
     headers: {
       'Content-Type': 'application/json',

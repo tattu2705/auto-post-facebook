@@ -54,18 +54,10 @@ export interface CommentHistoryListItem {
   id: number;
   comment_text: string; // Truncated version
   status: string;
-  total_links: number;
-  successful_links: number;
-  failed_links: number;
   estimated_duration?: number;
-  actual_duration?: number;
   created_at: string;
-  started_at?: string;
-  completed_at?: string;
-  cookie_file?: {
-    id: number;
-    name: string;
-  };
+  cookie_file_path?: string;
+  target_urls: string[];
 }
 
 // User Stats Types
