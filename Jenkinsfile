@@ -1,6 +1,5 @@
 pipeline {
   agent any
-
   stages {
     stage('Build') {
       steps {
@@ -17,6 +16,11 @@ pipeline {
       steps {
         sh 'echo Deploying...'
       }
+    }
+  }
+  post {
+    always {
+      echo "Pipeline finished!"
     }
   }
 }
