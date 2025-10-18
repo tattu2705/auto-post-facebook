@@ -1,10 +1,11 @@
 pipeline {
-   
-  stages {  
+  agent any
+
+  stages {
     stage('Build') {
       steps {
         sh 'echo Building...'
-        eco "123"
+        echo "123"
       }
     }
     stage('Test') {
