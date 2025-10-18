@@ -1,9 +1,22 @@
 pipeline {
     agent any
+
     stages {
-        stage('Example') {
+        stage('Build') {
             steps {
-                echo 'Hello World'
+                echo 'Building..'
+                npm install
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing..'
+                
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying....'
             }
         }
     }
